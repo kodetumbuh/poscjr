@@ -32,16 +32,16 @@ class UserCRUD(tk.Toplevel):
         self.title("Manajemen Pengguna Kasir")
         self.geometry("700x500")
 
+        self.editing_user_id = None
         create_user_table()
         self.setup_ui()
         self.refresh_tree()
 
     def setup_ui(self):
-        # Judul
         title = ttk.Label(self, text="Data Pengguna Kasir", font=("Arial", 20, "bold"))
         title.pack(pady=10)
 
-        # Form
+        # Form Tambah User
         form_frame = ttk.Frame(self)
         form_frame.pack(pady=10)
 
@@ -67,10 +67,18 @@ class UserCRUD(tk.Toplevel):
         btn_frame = ttk.Frame(self)
         btn_frame.pack(pady=10)
 
-        ttk.Button(btn_frame, text="Tambah", command=self.add_user).grid(row=0, column=0, padx=10)
-        ttk.Button(btn_frame, text="Hapus", command=self.delete_user).grid(row=0, column=1, padx=10)
+        self.save_btn = ttk.Button(btn_frame, text="Tambah", command=self.add_user)
+        self.save_btn.grid(row=0, column=0, padx=10)
 
-        # Treeview Frame + Scrollbar
+        self.edit_btn = ttk.Button(btn_frame, text="Edit", command=self.save_edit)
+        self.edit_btn.grid(row=0, column=1, padx=10)
+
+        self.cancel_btn = ttk.Button(btn_frame, text="Cancel", command=self.cancel_edit)
+        self.cancel_btn.grid(row=0, column=2, padx=10)
+
+        ttk.Button(btn_frame, text="Hapus", command=self.delete_user).grid(row=0, column=3, padx=10)
+
+        # Treeview
         tree_frame = ttk.Frame(self)
         tree_frame.pack(pady=10, fill="both", expand=True, padx=20)
 
@@ -84,6 +92,8 @@ class UserCRUD(tk.Toplevel):
         self.tree.pack(fill="both", expand=True)
         tree_scroll.config(command=self.tree.yview)
 
+        self.tree.bind("<<TreeviewSelect>>", self.on_tree_select)
+
     def refresh_tree(self):
         for i in self.tree.get_children():
             self.tree.delete(i)
@@ -95,6 +105,35 @@ class UserCRUD(tk.Toplevel):
             self.tree.insert('', 'end', values=row)
         conn.close()
 
+        self.clear_form()
+
+    def clear_form(self):
+        self.name_entry.delete(0, tk.END)
+        self.username_entry.delete(0, tk.END)
+        self.password_entry.delete(0, tk.END)
+        self.role_combo.set("admin")
+        self.editing_user_id = None
+
+    def cancel_edit(self):
+        self.clear_form()
+
+    def on_tree_select(self, event):
+        selected = self.tree.selection()
+        if not selected:
+            return
+
+        user_data = self.tree.item(selected[0])['values']
+        self.editing_user_id = user_data[0]
+
+        self.name_entry.delete(0, tk.END)
+        self.name_entry.insert(0, user_data[1])
+
+        self.username_entry.delete(0, tk.END)
+        self.username_entry.insert(0, user_data[2])
+
+        self.password_entry.delete(0, tk.END)
+        self.role_combo.set(user_data[3])
+
     def add_user(self):
         name = self.name_entry.get()
         username = self.username_entry.get()
@@ -102,7 +141,7 @@ class UserCRUD(tk.Toplevel):
         role = self.role_var.get()
 
         if not all([name, username, password, role]):
-            messagebox.showerror("Error", "Semua field harus diisi!")
+            messagebox.showerror("Error", "Semua field harus diisi!", parent=self)
             return
 
         conn = get_connection()
@@ -112,16 +151,48 @@ class UserCRUD(tk.Toplevel):
                            (name, username, hash_password(password), role))
             conn.commit()
             self.refresh_tree()
-            messagebox.showinfo("Sukses", "User berhasil ditambahkan!")
+            messagebox.showinfo("Sukses", "User berhasil ditambahkan!", parent=self)
         except sqlite3.IntegrityError:
-            messagebox.showerror("Error", "Username sudah digunakan!")
+            messagebox.showerror("Error", "Username sudah digunakan!", parent=self)
+        finally:
+            conn.close()
+
+    def save_edit(self):
+        if not self.editing_user_id:
+            return
+
+        name = self.name_entry.get()
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+        role = self.role_var.get()
+
+        if not all([name, username, role]):
+            messagebox.showerror("Error", "Field tidak boleh kosong!", parent=self)
+            return
+
+        conn = get_connection()
+        cursor = conn.cursor()
+        try:
+            if password:
+                cursor.execute("""
+                    UPDATE user SET name=?, username=?, password=?, role=? WHERE id=?
+                """, (name, username, hash_password(password), role, self.editing_user_id))
+            else:
+                cursor.execute("""
+                    UPDATE user SET name=?, username=?, role=? WHERE id=?
+                """, (name, username, role, self.editing_user_id))
+            conn.commit()
+            messagebox.showinfo("Sukses", "Data user berhasil diperbarui.", parent=self)
+            self.refresh_tree()
+        except sqlite3.IntegrityError:
+            messagebox.showerror("Error", "Username sudah digunakan!", parent=self)
         finally:
             conn.close()
 
     def delete_user(self):
         selected = self.tree.selection()
         if not selected:
-            messagebox.showerror("Error", "Pilih user yang ingin dihapus.")
+            messagebox.showerror("Error", "Pilih user yang ingin dihapus.", parent=self)
             return
 
         user_id = self.tree.item(selected[0])['values'][0]
@@ -131,4 +202,4 @@ class UserCRUD(tk.Toplevel):
         conn.commit()
         conn.close()
         self.refresh_tree()
-        messagebox.showinfo("Sukses", "User berhasil dihapus.")
+        messagebox.showinfo("Sukses", "User berhasil dihapus.", parent=self)
