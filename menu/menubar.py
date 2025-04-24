@@ -3,6 +3,9 @@ from tkinter import messagebox
 from pengaturan.about import show_about
 from pengaturan.user import UserCRUD
 from supplier.data_supplier import SupplierCRUD
+from produk.data_kategori import CategoryCRUD
+from produk.data_produk import ProductCRUD
+from stok.data_stock_in import StockInCRUD
 
 class MenuBar(tk.Menu):
     def __init__(self, parent, container):  # tambahkan container (tempat frame muncul)
@@ -16,12 +19,22 @@ class MenuBar(tk.Menu):
         file_menu.add_command(label="Open", command=self.open_file)
         file_menu.add_command(label="Exit", command=parent.quit)
         self.add_cascade(label="File", menu=file_menu)
+        
+        # Produk
+        crud_produk = tk.Menu(self, tearoff=0)
+        crud_produk.add_command(label="Produk", command=self.show_produk_data_crud)
+        crud_produk.add_command(label="Kategori", command=self.show_produk_kategori_crud)
+        self.add_cascade(label="Produk", menu=crud_produk)
 
         # Data Supplier
         crud_supplier = tk.Menu(self, tearoff=0)
         crud_supplier.add_command(label="Data Supplier", command=self.show_supplier_crud)
         self.add_cascade(label="Supplier", menu=crud_supplier)
-
+        
+        # Data Stock
+        crud_stock = tk.Menu(self, tearoff=0)
+        crud_stock.add_command(label="Data Stock", command=self.show_stok_data_stock_in)
+        self.add_cascade(label="Supplier", menu=crud_stock)
 
         # Help Menu
         help_menu = tk.Menu(self, tearoff=0)
@@ -46,7 +59,24 @@ class MenuBar(tk.Menu):
     def show_user_crud(self):
         user_window = UserCRUD(self)
         user_window.grab_set()
+        user_window.focus_force()
         
     def show_supplier_crud(self):
         user_window = SupplierCRUD(self)
         user_window.grab_set()
+        user_window.focus_force()
+        
+    def show_produk_kategori_crud(self):
+        user_window = CategoryCRUD(self)
+        user_window.grab_set()
+        user_window.focus_force()
+        
+    def show_produk_data_crud(self):
+        user_window = ProductCRUD(self)
+        user_window.grab_set()
+        user_window.focus_force()
+    
+    def show_stok_data_stock_in(self):
+        user_window = StockInCRUD(self)
+        user_window.grab_set()
+        user_window.focus_force()
