@@ -3,11 +3,13 @@ from menu.menubar import MenuBar
 
 def main():
     root = tk.Tk()
-    root.title("Aplikasi dengan MenuBar")
+    root.title("Sistem POS")
+    root.geometry("800x600")
 
-    root.state('zoomed')  # Berfungsi di Windows
+    container = tk.Frame(root)
+    container.pack(fill="both", expand=True)
 
-    menu = MenuBar(root)
+    menu = MenuBar(root, container)
     root.config(menu=menu)
 
     root.mainloop()
