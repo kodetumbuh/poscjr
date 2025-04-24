@@ -20,9 +20,13 @@ class LoginWindow:
         self.username_entry = ttk.Entry(root)
         self.username_entry.pack(pady=5)
 
+
         ttk.Label(root, text="Password:").pack(pady=5)
         self.password_entry = ttk.Entry(root, show="*")
         self.password_entry.pack(pady=5)
+        
+        #bind tekan tombol enter
+        self.root.bind('<Return>', lambda event: self.login())
 
         ttk.Button(root, text="Login", command=self.login).pack(pady=10)
 

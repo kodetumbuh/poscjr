@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import messagebox
 from pengaturan.about import show_about
 from pengaturan.user import UserCRUD
+from supplier.data_supplier import SupplierCRUD
 
 class MenuBar(tk.Menu):
     def __init__(self, parent, container):  # tambahkan container (tempat frame muncul)
@@ -15,6 +16,12 @@ class MenuBar(tk.Menu):
         file_menu.add_command(label="Open", command=self.open_file)
         file_menu.add_command(label="Exit", command=parent.quit)
         self.add_cascade(label="File", menu=file_menu)
+
+        # Data Supplier
+        crud_supplier = tk.Menu(self, tearoff=0)
+        crud_supplier.add_command(label="Data Supplier", command=self.show_supplier_crud)
+        self.add_cascade(label="Supplier", menu=crud_supplier)
+
 
         # Help Menu
         help_menu = tk.Menu(self, tearoff=0)
@@ -38,4 +45,8 @@ class MenuBar(tk.Menu):
 
     def show_user_crud(self):
         user_window = UserCRUD(self)
+        user_window.grab_set()
+        
+    def show_supplier_crud(self):
+        user_window = SupplierCRUD(self)
         user_window.grab_set()
