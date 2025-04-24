@@ -46,15 +46,15 @@ class UserCRUD(tk.Toplevel):
         form_frame.pack(pady=10)
 
         ttk.Label(form_frame, text="Nama").grid(row=0, column=0, padx=5, pady=5)
-        self.name_entry = ttk.Entry(form_frame)
+        self.name_entry = tk.Entry(form_frame)
         self.name_entry.grid(row=0, column=1, padx=5, pady=5)
 
         ttk.Label(form_frame, text="Username").grid(row=1, column=0, padx=5, pady=5)
-        self.username_entry = ttk.Entry(form_frame)
+        self.username_entry = tk.Entry(form_frame)
         self.username_entry.grid(row=1, column=1, padx=5, pady=5)
 
         ttk.Label(form_frame, text="Password").grid(row=2, column=0, padx=5, pady=5)
-        self.password_entry = ttk.Entry(form_frame, show="*")
+        self.password_entry = tk.Entry(form_frame, show="*")
         self.password_entry.grid(row=2, column=1, padx=5, pady=5)
 
         ttk.Label(form_frame, text="Role").grid(row=3, column=0, padx=5, pady=5)

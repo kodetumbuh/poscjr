@@ -41,15 +41,15 @@ class SupplierCRUD(tk.Toplevel):
         form_frame.pack(pady=10)
 
         ttk.Label(form_frame, text="Nama").grid(row=0, column=0, padx=5, pady=5)
-        self.name_entry = ttk.Entry(form_frame)
+        self.name_entry = tk.Entry(form_frame)
         self.name_entry.grid(row=0, column=1, padx=5, pady=5)
 
         ttk.Label(form_frame, text="Telepon").grid(row=1, column=0, padx=5, pady=5)
-        self.phone_entry = ttk.Entry(form_frame)
+        self.phone_entry = tk.Entry(form_frame)
         self.phone_entry.grid(row=1, column=1, padx=5, pady=5)
 
         ttk.Label(form_frame, text="Alamat").grid(row=2, column=0, padx=5, pady=5)
-        self.address_text = tk.Text(form_frame, height=4, width=40)
+        self.address_text = tk.Text(form_frame, height=3, width=20, font=('arial',9))
         self.address_text.grid(row=2, column=1, padx=5, pady=5)
 
         # Tombol
