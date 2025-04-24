@@ -1,5 +1,5 @@
 import tkinter as tk
-from menubar import MenuBar
+from menu.menubar import MenuBar
 
 def main():
     root = tk.Tk()

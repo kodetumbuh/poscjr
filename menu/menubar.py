@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import messagebox
-from pengaturan.about import show_about  # langsung impor fungsi
+from pengaturan.about import show_about
 
 class MenuBar(tk.Menu):
     def __init__(self, parent):
@@ -22,8 +22,6 @@ class MenuBar(tk.Menu):
         setting_menu = tk.Menu(self, tearoff=0)
         setting_menu.add_command(label="About", command=lambda: show_about(parent))
         self.add_cascade(label="Pengaturan", menu=setting_menu)
-
-
 
     def new_file(self):
         messagebox.showinfo("New File", "Create a new file")
