@@ -18,8 +18,6 @@ def create_product_table():
             supplier_id INTEGER,
             purchase_price REAL NOT NULL,
             selling_price REAL NOT NULL,
-            stock INTEGER NOT NULL,
-            unit TEXT NOT NULL,
             FOREIGN KEY (category_id) REFERENCES categories(id),
             FOREIGN KEY (supplier_id) REFERENCES supplier(id)
         )
@@ -32,6 +30,7 @@ class ProductCRUD(tk.Toplevel):
         super().__init__(parent)
         self.title("Manajemen Produk")
         self.geometry("850x600")
+        self.minsize(850, 600)
 
         self.editing_product_id = None
         create_product_table()
@@ -45,35 +44,33 @@ class ProductCRUD(tk.Toplevel):
         form_frame = ttk.Frame(self)
         form_frame.pack(pady=10)
 
-        labels = ["Barcode", "Nama", "Kategori", "Supplier", "Harga Beli", "Harga Jual", "Stok", "Satuan"]
-        for i, label in enumerate(labels):
-            ttk.Label(form_frame, text=label).grid(row=i, column=0, padx=5, pady=5)
-
+        ttk.Label(form_frame, text="Barcode").grid(row=0, column=0, padx=5, pady=5)
         self.barcode_entry = tk.Entry(form_frame)
         self.barcode_entry.grid(row=0, column=1, padx=5, pady=5)
 
+        ttk.Label(form_frame, text="Nama").grid(row=1, column=0, padx=5, pady=5)
         self.name_entry = tk.Entry(form_frame)
         self.name_entry.grid(row=1, column=1, padx=5, pady=5)
 
+        ttk.Label(form_frame, text="Kategori").grid(row=2, column=0, padx=5, pady=5)
         self.category_var = tk.StringVar()
         self.category_combo = ttk.Combobox(form_frame, textvariable=self.category_var, state="readonly")
         self.category_combo.grid(row=2, column=1, padx=5, pady=5)
 
+        ttk.Label(form_frame, text="Supplier").grid(row=3, column=0, padx=5, pady=5)
         self.supplier_var = tk.StringVar()
         self.supplier_combo = ttk.Combobox(form_frame, textvariable=self.supplier_var, state="readonly")
         self.supplier_combo.grid(row=3, column=1, padx=5, pady=5)
 
+        ttk.Label(form_frame, text="Harga Beli").grid(row=4, column=0, padx=5, pady=5)
         self.purchase_price_entry = tk.Entry(form_frame)
         self.purchase_price_entry.grid(row=4, column=1, padx=5, pady=5)
+        self.purchase_price_entry.bind("<KeyRelease>", self.format_rupiah_live)
 
+        ttk.Label(form_frame, text="Harga Jual").grid(row=5, column=0, padx=5, pady=5)
         self.selling_price_entry = tk.Entry(form_frame)
         self.selling_price_entry.grid(row=5, column=1, padx=5, pady=5)
-
-        self.stock_entry = tk.Entry(form_frame)
-        self.stock_entry.grid(row=6, column=1, padx=5, pady=5)
-
-        self.unit_entry = tk.Entry(form_frame)
-        self.unit_entry.grid(row=7, column=1, padx=5, pady=5)
+        self.selling_price_entry.bind("<KeyRelease>", self.format_rupiah_live)
 
         btn_frame = ttk.Frame(self)
         btn_frame.pack(pady=10)
@@ -83,31 +80,33 @@ class ProductCRUD(tk.Toplevel):
         ttk.Button(btn_frame, text="Cancel", command=self.cancel_edit).grid(row=0, column=2, padx=10)
         ttk.Button(btn_frame, text="Hapus", command=self.delete_product).grid(row=0, column=3, padx=10)
 
+        # === BAGIAN TREEVIEW RESPONSIF ===
         tree_frame = ttk.Frame(self)
-        tree_frame.pack(pady=10, fill="both", expand=True, padx=20)
+        tree_frame.pack(padx=20, pady=10, fill="both", expand=True)
 
-        # Scrollbar vertikal
         tree_scroll_vertical = ttk.Scrollbar(tree_frame, orient="vertical")
-        tree_scroll_vertical.pack(side="right", fill="y")
-
-        # Scrollbar horizontal
         tree_scroll_horizontal = ttk.Scrollbar(tree_frame, orient="horizontal")
-        tree_scroll_horizontal.pack(side="bottom", fill="x")
 
-        # Treeview dengan scrollbar vertikal dan horizontal
-        self.tree = ttk.Treeview(tree_frame, columns=('ID', 'Barcode', 'Name', 'Category', 'Supplier', 'Purchase', 'Selling', 'Stock', 'Unit'), 
-                                 show='headings', 
-                                 yscrollcommand=tree_scroll_vertical.set,
-                                 xscrollcommand=tree_scroll_horizontal.set)
-        
+        self.tree = ttk.Treeview(
+            tree_frame,
+            columns=('ID', 'Barcode', 'Name', 'Category', 'Supplier', 'Purchase', 'Selling'),
+            show='headings',
+            yscrollcommand=tree_scroll_vertical.set,
+            xscrollcommand=tree_scroll_horizontal.set
+        )
+
         for col in self.tree["columns"]:
             self.tree.heading(col, text=col)
-            self.tree.column(col, anchor="center")
-        self.tree.pack(fill="both", expand=True)
+            self.tree.column(col, anchor="center", stretch=True, width=100)
 
-        # Menghubungkan scrollbar vertikal dan horizontal
+        self.tree.grid(row=0, column=0, sticky="nsew")
         tree_scroll_vertical.config(command=self.tree.yview)
+        tree_scroll_vertical.grid(row=0, column=1, sticky="ns")
         tree_scroll_horizontal.config(command=self.tree.xview)
+        tree_scroll_horizontal.grid(row=1, column=0, sticky="ew")
+
+        tree_frame.grid_rowconfigure(0, weight=1)
+        tree_frame.grid_columnconfigure(0, weight=1)
 
         self.tree.bind("<<TreeviewSelect>>", self.on_tree_select)
 
@@ -137,13 +136,16 @@ class ProductCRUD(tk.Toplevel):
         conn = get_connection()
         cursor = conn.cursor()
         cursor.execute('''
-            SELECT p.id, p.barcode, p.name, c.name, s.name, p.purchase_price, p.selling_price, p.stock, p.unit
+            SELECT p.id, p.barcode, p.name, c.name, s.name, p.purchase_price, p.selling_price
             FROM product p
             LEFT JOIN categories c ON p.category_id = c.id
             LEFT JOIN supplier s ON p.supplier_id = s.id
         ''')
         for row in cursor.fetchall():
-            self.tree.insert('', 'end', values=row)
+            formatted_row = list(row)
+            formatted_row[5] = "{:,.0f}".format(formatted_row[5]).replace(",", ".")
+            formatted_row[6] = "{:,.0f}".format(formatted_row[6]).replace(",", ".")
+            self.tree.insert('', 'end', values=formatted_row)
         conn.close()
         self.clear_form()
 
@@ -154,8 +156,6 @@ class ProductCRUD(tk.Toplevel):
         self.supplier_combo.set("")
         self.purchase_price_entry.delete(0, tk.END)
         self.selling_price_entry.delete(0, tk.END)
-        self.stock_entry.delete(0, tk.END)
-        self.unit_entry.delete(0, tk.END)
         self.editing_product_id = None
 
     def cancel_edit(self):
@@ -177,10 +177,6 @@ class ProductCRUD(tk.Toplevel):
         self.purchase_price_entry.insert(0, data[5])
         self.selling_price_entry.delete(0, tk.END)
         self.selling_price_entry.insert(0, data[6])
-        self.stock_entry.delete(0, tk.END)
-        self.stock_entry.insert(0, data[7])
-        self.unit_entry.delete(0, tk.END)
-        self.unit_entry.insert(0, data[8])
 
     def add_product(self):
         try:
@@ -188,15 +184,13 @@ class ProductCRUD(tk.Toplevel):
             name = self.name_entry.get()
             category_id = self.categories.get(self.category_combo.get())
             supplier_id = self.supplier.get(self.supplier_combo.get())
-            purchase_price = float(self.purchase_price_entry.get())
-            selling_price = float(self.selling_price_entry.get())
-            stock = int(self.stock_entry.get())
-            unit = self.unit_entry.get()
+            purchase_price = self.parse_rupiah(self.purchase_price_entry.get())
+            selling_price = self.parse_rupiah(self.selling_price_entry.get())
         except ValueError:
-            messagebox.showerror("Error", "Barcode, harga, dan stok harus berupa angka.", parent=self)
+            messagebox.showerror("Error", "Barcode dan harga harus berupa angka.", parent=self)
             return
 
-        if not name or not unit:
+        if not name:
             messagebox.showerror("Error", "Nama dan satuan produk wajib diisi.", parent=self)
             return
 
@@ -204,14 +198,15 @@ class ProductCRUD(tk.Toplevel):
         cursor = conn.cursor()
         try:
             cursor.execute('''
-                INSERT INTO product (barcode, name, category_id, supplier_id, purchase_price, selling_price, stock, unit)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            ''', (barcode, name, category_id, supplier_id, purchase_price, selling_price, stock, unit))
+                INSERT INTO product (barcode, name, category_id, supplier_id, purchase_price, selling_price)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (barcode, name, category_id, supplier_id, purchase_price, selling_price))
             conn.commit()
         except sqlite3.IntegrityError:
             messagebox.showerror("Error", "Barcode sudah terdaftar.", parent=self)
         else:
             self.refresh_tree()
+            messagebox.showinfo("Sukses", "Produk sudah dimasukkan.", parent=self)
         conn.close()
 
     def save_edit(self):
@@ -224,15 +219,13 @@ class ProductCRUD(tk.Toplevel):
             name = self.name_entry.get()
             category_id = self.categories.get(self.category_combo.get())
             supplier_id = self.supplier.get(self.supplier_combo.get())
-            purchase_price = float(self.purchase_price_entry.get())
-            selling_price = float(self.selling_price_entry.get())
-            stock = int(self.stock_entry.get())
-            unit = self.unit_entry.get()
+            purchase_price = self.parse_rupiah(self.purchase_price_entry.get())
+            selling_price = self.parse_rupiah(self.selling_price_entry.get())
         except ValueError:
-            messagebox.showerror("Error", "Barcode, harga, dan stok harus berupa angka.", parent=self)
+            messagebox.showerror("Error", "Barcode dan harga harus berupa angka.", parent=self)
             return
 
-        if not name or not unit:
+        if not name:
             messagebox.showerror("Error", "Nama dan satuan produk wajib diisi.", parent=self)
             return
 
@@ -240,14 +233,15 @@ class ProductCRUD(tk.Toplevel):
         cursor = conn.cursor()
         try:
             cursor.execute('''
-                UPDATE product SET barcode=?, name=?, category_id=?, supplier_id=?, purchase_price=?, selling_price=?, stock=?, unit=?
+                UPDATE product SET barcode=?, name=?, category_id=?, supplier_id=?, purchase_price=?, selling_price=?
                 WHERE id=?
-            ''', (barcode, name, category_id, supplier_id, purchase_price, selling_price, stock, unit, self.editing_product_id))
+            ''', (barcode, name, category_id, supplier_id, purchase_price, selling_price, self.editing_product_id))
             conn.commit()
         except sqlite3.IntegrityError:
             messagebox.showerror("Error", "Barcode sudah terdaftar pada produk lain.", parent=self)
         else:
             self.refresh_tree()
+            messagebox.showinfo("Sukses", "Produk berhasil diedit.", parent=self)
         conn.close()
 
     def delete_product(self):
@@ -268,3 +262,17 @@ class ProductCRUD(tk.Toplevel):
         conn.commit()
         conn.close()
         self.refresh_tree()
+
+    def format_rupiah_live(self, event):
+        entry = event.widget
+        current_value = entry.get()
+        cursor_pos = entry.index(tk.INSERT)
+        cleaned = ''.join(filter(str.isdigit, current_value))
+        if cleaned:
+            formatted = "{:,}".format(int(cleaned)).replace(",", ".")
+            entry.delete(0, tk.END)
+            entry.insert(0, formatted)
+            entry.icursor(tk.END)
+
+    def parse_rupiah(self, value):
+        return float(value.replace('.', '').strip())

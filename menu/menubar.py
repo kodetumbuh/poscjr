@@ -34,7 +34,7 @@ class MenuBar(tk.Menu):
         # Data Stock
         crud_stock = tk.Menu(self, tearoff=0)
         crud_stock.add_command(label="Data Stock", command=self.show_stok_data_stock_in)
-        self.add_cascade(label="Supplier", menu=crud_stock)
+        self.add_cascade(label="Stock", menu=crud_stock)
 
         # Help Menu
         help_menu = tk.Menu(self, tearoff=0)

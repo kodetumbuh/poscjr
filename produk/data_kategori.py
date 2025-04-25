@@ -91,10 +91,10 @@ class CategoryCRUD(tk.Toplevel):
         if not selected:
             return
 
-        cat_data = self.tree.item(selected[0])['values']
-        self.editing_category_id = cat_data[0]
+        category_data = self.tree.item(selected[0])['values']
+        self.editing_category_id = category_data[0]
         self.name_entry.delete(0, tk.END)
-        self.name_entry.insert(0, cat_data[1])
+        self.name_entry.insert(0, category_data[1])
 
     def add_category(self):
         name = self.name_entry.get()
@@ -144,10 +144,10 @@ class CategoryCRUD(tk.Toplevel):
             messagebox.showerror("Error", "Pilih kategori yang ingin dihapus.", parent=self)
             return
 
-        cat_id = self.tree.item(selected[0])['values'][0]
+        category_id = self.tree.item(selected[0])['values'][0]
         conn = get_connection()
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM categories WHERE id = ?", (cat_id,))
+        cursor.execute("DELETE FROM categories WHERE id = ?", (category_id,))
         conn.commit()
         conn.close()
         self.refresh_tree()
