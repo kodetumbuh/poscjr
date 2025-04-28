@@ -44,7 +44,7 @@ class StockInCRUD(tk.Toplevel):
         cursor.execute("SELECT id, name FROM product")
         result = cursor.fetchall()
         conn.close()
-        return {f"{name} (ID:{pid})": pid for pid, name in result}
+        return {name: pid for pid, name in result}
 
     def get_suppliers(self):
         conn = get_connection()
@@ -52,7 +52,7 @@ class StockInCRUD(tk.Toplevel):
         cursor.execute("SELECT id, name FROM supplier")
         result = cursor.fetchall()
         conn.close()
-        return {f"{name} (ID:{sid})": sid for sid, name in result}
+        return {name: sid for sid, name in result}
 
     def setup_ui(self):
         title = ttk.Label(self, text="Data Barang Masuk", font=("Arial", 20, "bold"))
@@ -73,7 +73,7 @@ class StockInCRUD(tk.Toplevel):
         self.supplier_combo.grid(row=1, column=1, padx=5, pady=5)
 
         ttk.Label(form, text="Tanggal").grid(row=2, column=0, padx=5, pady=5, sticky="e")
-#        self.date_entry = DateEntry(form, locale='id_ID', date_pattern='yyyy-mm-dd', selectmode='day', showweeknumbers=False, width=18)
+#       self.date_entry = DateEntry(form, locale='id_ID', date_pattern='yyyy-mm-dd', selectmode='day', showweeknumbers=False, width=18)
 #       self.date_entry.grid(row=2, column=1, padx=5, pady=5)
         self.date_var = tk.StringVar()
         self.date_entry = tk.Entry(form, textvariable=self.date_var, state="readonly", width=22)
