@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import sqlite3
-from tkcalendar import DateEntry,Calendar
+from tkcalendar import DateEntry, Calendar
 
 # === DATABASE SETUP ===
 def get_connection():
@@ -64,39 +64,41 @@ class StockInCRUD(tk.Toplevel):
         # Form Inputs
         ttk.Label(form, text="Produk").grid(row=0, column=0, padx=5, pady=5, sticky="e")
         self.product_var = tk.StringVar()
-        self.product_combo = ttk.Combobox(form, textvariable=self.product_var, values=list(self.products.keys()), state="readonly")
-        self.product_combo.grid(row=0, column=1, padx=5, pady=5)
+        self.product_entry = tk.Entry(form, textvariable=self.product_var, state="normal")
+        self.product_entry.grid(row=0, column=1, padx=5, pady=5)
+        self.product_entry.bind('<KeyRelease>', self.on_product_keyrelease)  # Event handler for autocomplete
 
-        ttk.Label(form, text="Supplier").grid(row=1, column=0, padx=5, pady=5, sticky="e")
+        # Listbox for product suggestions
+        self.product_listbox = tk.Listbox(form, width=20, height=5)
+        self.product_listbox.grid(row=1, column=1, padx=5, pady=0)
+        self.product_listbox.bind("<Double-1>", self.on_product_select)
+        self.product_listbox.grid_remove()  # Hide by default
+
+        ttk.Label(form, text="Supplier").grid(row=2, column=0, padx=5, pady=5, sticky="e")
         self.supplier_var = tk.StringVar()
         self.supplier_combo = ttk.Combobox(form, textvariable=self.supplier_var, values=list(self.suppliers.keys()), state="readonly")
-        self.supplier_combo.grid(row=1, column=1, padx=5, pady=5)
+        self.supplier_combo.grid(row=2, column=1, padx=5, pady=5)
 
-        ttk.Label(form, text="Tanggal").grid(row=2, column=0, padx=5, pady=5, sticky="e")
-#       self.date_entry = DateEntry(form, locale='id_ID', date_pattern='yyyy-mm-dd', selectmode='day', showweeknumbers=False, width=18)
-#       self.date_entry.grid(row=2, column=1, padx=5, pady=5)
+        ttk.Label(form, text="Tanggal").grid(row=3, column=0, padx=5, pady=5, sticky="e")
         self.date_var = tk.StringVar()
         self.date_entry = tk.Entry(form, textvariable=self.date_var, state="readonly", width=22)
-        self.date_entry.grid(row=2, column=1, padx=5, pady=5)
+        self.date_entry.grid(row=3, column=1, padx=5, pady=5)
         self.date_entry.bind("<Button-1>", self.show_calendar)
-        
-        # Tambahkan efek hover untuk ubah cursor jadi tangan
-        self.date_entry.bind("<Enter>", lambda e: self.date_entry.config(cursor="hand2"))
-        self.date_entry.bind("<Leave>", lambda e: self.date_entry.config(cursor=""))
 
-        ttk.Label(form, text="Jumlah").grid(row=3, column=0, padx=5, pady=5, sticky="e")
+        ttk.Label(form, text="Jumlah").grid(row=4, column=0, padx=5, pady=5, sticky="e")
         self.quantity_entry = tk.Entry(form)
-        self.quantity_entry.grid(row=3, column=1, padx=5, pady=5)
+        self.quantity_entry.grid(row=4, column=1, padx=5, pady=5)
+        self.quantity_entry.bind("<KeyRelease>", self.format_angka)
 
-        ttk.Label(form, text="Satuan").grid(row=4, column=0, padx=5, pady=5, sticky="e")
+        ttk.Label(form, text="Satuan").grid(row=5, column=0, padx=5, pady=5, sticky="e")
         self.unit_entry = tk.Entry(form)
-        self.unit_entry.grid(row=4, column=1, padx=5, pady=5)
+        self.unit_entry.grid(row=5, column=1, padx=5, pady=5)
 
-        ttk.Label(form, text="Catatan").grid(row=5, column=0, padx=5, pady=5, sticky="e")
+        ttk.Label(form, text="Catatan").grid(row=6, column=0, padx=5, pady=5, sticky="e")
         self.note_entry = tk.Entry(form)
-        self.note_entry.grid(row=5, column=1, padx=5, pady=5)
+        self.note_entry.grid(row=6, column=1, padx=5, pady=5)
 
-        # Tombol
+        # Buttons
         btn_frame = ttk.Frame(self)
         btn_frame.pack(pady=10)
 
@@ -121,6 +123,24 @@ class StockInCRUD(tk.Toplevel):
 
         self.tree.bind("<<TreeviewSelect>>", self.on_tree_select)
 
+    def on_product_keyrelease(self, event):
+        typed_text = self.product_var.get().lower()
+        filtered_products = [p for p in self.products.keys() if typed_text in p.lower()][:6]
+        
+        # Show listbox if there are matching products
+        if filtered_products:
+            self.product_listbox.grid()  # Show listbox
+            self.product_listbox.delete(0, tk.END)
+            for product in filtered_products:
+                self.product_listbox.insert(tk.END, product)
+        else:
+            self.product_listbox.grid_remove()  # Hide listbox if no matches
+
+    def on_product_select(self, event):
+        selected_product = self.product_listbox.get(tk.ACTIVE)
+        self.product_var.set(selected_product)
+        self.product_listbox.grid_remove()  # Hide listbox after selection
+
     def refresh_tree(self):
         for i in self.tree.get_children():
             self.tree.delete(i)
@@ -137,7 +157,7 @@ class StockInCRUD(tk.Toplevel):
         popup_width = 250
         popup_height = 220
 
-        # Hitung posisi tengah layar
+        # Calculate the center position of the screen
         screen_width = self.winfo_screenwidth()
         screen_height = self.winfo_screenheight()
         pos_x = (screen_width // 2) - (popup_width // 2)
@@ -160,13 +180,14 @@ class StockInCRUD(tk.Toplevel):
         cal.bind("<<CalendarSelected>>", on_date_select)
     
     def clear_form(self):
-        self.product_combo.set("")
+        self.product_var.set("")
         self.supplier_combo.set("")
-        self.date_entry.delete(0, tk.END)
+        self.date_var.set("")
         self.quantity_entry.delete(0, tk.END)
         self.unit_entry.delete(0, tk.END)
         self.note_entry.delete(0, tk.END)
         self.editing_id = None
+        self.product_listbox.grid_remove()  # Hide listbox on form clear
 
     def cancel_edit(self):
         self.clear_form()
@@ -179,10 +200,9 @@ class StockInCRUD(tk.Toplevel):
         data = self.tree.item(selected[0])['values']
         self.editing_id = data[0]
 
-        self.product_combo.set(self.get_key_by_value(self.products, data[1]))
+        self.product_var.set(self.get_key_by_value(self.products, data[1]))
         self.supplier_combo.set(self.get_key_by_value(self.suppliers, data[2]))
-        self.date_entry.delete(0, tk.END)
-        self.date_entry.insert(0, data[3])
+        self.date_var.set(data[3])
         self.quantity_entry.delete(0, tk.END)
         self.quantity_entry.insert(0, data[4])
         self.unit_entry.delete(0, tk.END)
@@ -200,8 +220,8 @@ class StockInCRUD(tk.Toplevel):
         try:
             product_id = self.products.get(self.product_var.get())
             supplier_id = self.suppliers.get(self.supplier_var.get())
-            date = self.date_entry.get()
-            quantity = self.quantity_entry.get()
+            date = self.date_var.get()
+            quantity = self.quantity_entry.get().replace(".", "")
             unit = self.unit_entry.get()
             note = self.note_entry.get()
 
@@ -227,8 +247,8 @@ class StockInCRUD(tk.Toplevel):
         try:
             product_id = self.products.get(self.product_var.get())
             supplier_id = self.suppliers.get(self.supplier_var.get())
-            date = self.date_entry.get()
-            quantity = self.quantity_entry.get()
+            date = self.date_var.get()
+            quantity = self.quantity_entry.get().replace(".", "")
             unit = self.unit_entry.get()
             note = self.note_entry.get()
 
@@ -263,4 +283,14 @@ class StockInCRUD(tk.Toplevel):
         conn.close()
         self.refresh_tree()
         messagebox.showinfo("Sukses", "Data berhasil dihapus.", parent=self)
-
+        
+    def format_angka(self, event):
+        entry = event.widget
+        current_value = entry.get()
+        cursor_pos = entry.index(tk.INSERT)
+        cleaned = ''.join(filter(str.isdigit, current_value))
+        if cleaned:
+            formatted = "{:,}".format(int(cleaned)).replace(",", ".")
+            entry.delete(0, tk.END)
+            entry.insert(0, formatted)
+            entry.icursor(cursor_pos)
